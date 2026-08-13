@@ -1,6 +1,6 @@
 # assets
 
-本目录存放从 ProcessOn 导出的 PNG 图（简历/作品说明用）。
+本目录存放从 ProcessOn 导出的 PNG 图（作品插图）。
 
 操作步骤见 `design/ProcessOn使用说明.md`：
 1. 打开 ProcessOn → 导入 `design/` 下的 `.drawio` 文件
