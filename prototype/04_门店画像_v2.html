@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>门店潜力评估 Demo · 画像 v2</title>
+  <style>
+    :root {
+      --bg: #f3f0ea;
+      --panel: rgba(255, 252, 247, 0.94);
+      --panel-strong: #fffdf8;
+      --line: rgba(72, 55, 34, 0.12);
+      --text: #2f261d;
+      --muted: #786957;
+      --accent: #a14f2a;
+      --accent-2: #1f6b5c;
+      --warn: #b44b38;
+      --good: #2d7a55;
+      --shadow: 0 18px 40px rgba(72, 55, 34, 0.08);
+      --radius: 18px;
+      --level-high: #b24029;   /* 高潜 红棕 */
+      --level-grow: #b0752a;   /* 成长 琥珀 */
+      --level-base: #7a8a2a;   /* 基础 橄榄 */
+      --level-low: #6b6b66;    /* 低效 灰 */
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(180, 118, 58, 0.16), transparent 28%),
+        radial-gradient(circle at right center, rgba(31, 107, 92, 0.12), transparent 30%),
+        linear-gradient(180deg, #f8f5ef 0%, #efe8df 100%);
+    }
+
+    .shell {
+      max-width: 1520px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .hero-card,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero-card {
+      padding: 24px 26px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -80px auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(161, 79, 42, 0.15), transparent 70%);
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      line-height: 1.15;
+      font-weight: 700;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 20px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid var(--line);
+    }
+
+    .stat .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat .value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 14px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .panel-title span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .store-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 1100px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .store-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(255,255,255,0.56);
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .store-item:hover,
+    .store-item.active {
+      transform: translateY(-1px);
+      border-color: rgba(161, 79, 42, 0.45);
+      background: rgba(255,255,255,0.92);
+    }
+
+    .store-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .store-name {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .score {
+      min-width: 52px;
+      text-align: right;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .score-lev {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      border-radius: 999px;
+      padding: 2px 8px;
+      display: inline-block;
+    }
+    .lev-high { background: var(--level-high); }
+    .lev-grow { background: var(--level-grow); }
+    .lev-base { background: var(--level-base); }
+    .lev-low  { background: var(--level-low); }
+
+    .meta,
+    .tags,
+    .list-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(120, 105, 87, 0.08);
+      border: 1px solid rgba(120, 105, 87, 0.12);
+    }
+
+    .chip.strong {
+      color: #fff;
+      background: var(--accent);
+      border-color: transparent;
+    }
+
+    .chip.good {
+      color: #fff;
+      background: var(--good);
+      border-color: transparent;
+    }
+
+    .chip.warn {
+      color: #fff;
+      background: var(--warn);
+      border-color: transparent;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+    }
+
+    .section {
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.58);
+      margin-bottom: 14px;
+    }
+
+    .section h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .metric {
+      background: rgba(255, 252, 247, 0.96);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .metric .k {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .metric .v {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      line-height: 1.7;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .insight {
+      background: linear-gradient(180deg, rgba(31,107,92,0.08), rgba(161,79,42,0.06));
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .signal {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.68);
+    }
+
+    .signal .t {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .signal .d {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    .prompt-box {
+      white-space: pre-wrap;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--muted);
+      background: rgba(255,255,255,0.62);
+      border: 1px dashed rgba(120,105,87,0.35);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    /* ===== v2 新增：潜力分可视化 ===== */
+    .score-hero {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: center;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(135deg, rgba(161,79,42,0.08), rgba(31,107,92,0.06)),
+        rgba(255,255,255,0.66);
+      margin-bottom: 14px;
+    }
+
+    .score-big {
+      text-align: center;
+      padding: 6px 16px;
+    }
+    .score-big .num {
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -1px;
+      color: var(--accent);
+    }
+    .score-big .cap {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .score-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px 18px;
+      font-size: 13px;
+    }
+    .score-meta .row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed rgba(120,105,87,0.18);
+      padding: 4px 0;
+    }
+    .score-meta .row .k { color: var(--muted); }
+    .score-meta .row .v { font-weight: 600; }
+
+    .radar-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+    .radar-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .radar-legends {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 6px;
+    }
+    .radar-legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .dim-chips {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .dim-row {
+      display: grid;
+      grid-template-columns: 74px 1fr 42px;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .dim-row .nm { color: var(--muted); }
+    .dim-row .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(120,105,87,0.12);
+      overflow: hidden;
+    }
+    .dim-row .bar > i {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+    .dim-row .vl { font-weight: 700; text-align: right; }
+
+    .drivers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .driver-chip {
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgba(31,107,92,0.10);
+      border: 1px solid rgba(31,107,92,0.22);
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .driver-chip b { color: var(--accent-2); }
+
+    .risk-panel {
+      border: 1px solid rgba(180,75,56,0.28);
+      background: rgba(180,75,56,0.06);
+    }
+    .risk-item {
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 4px 0;
+    }
+    .risk-item .amt { font-weight: 700; color: var(--warn); }
+
+    .explain {
+      font-size: 13px;
+    }
+    .explain .level {
+      font-weight: 700;
+      margin: 10px 0 4px;
+    }
+    .explain .level .sc { color: var(--accent); font-weight: 700; }
+    .explain ul {
+      margin-top: 2px;
+    }
+    .explain .ind {
+      padding-left: 14px;
+      margin: 3px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .explain .ev {
+      color: #56615a;
+      font-size: 12px;
+    }
+    .explain .kv code {
+      background: rgba(120,105,87,0.08);
+      border-radius: 4px;
+      padding: 1px 4px;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 11px;
+    }
+    .delta {
+      font-size: 13px;
+      color: var(--warn);
+      font-weight: 600;
+    }
+
+    @media (max-width: 1180px) {
+      .hero,
+      .layout,
+      .detail-grid,
+      .radar-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        padding: 14px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .filters,
+      .two-col,
+      .timeline,
+      .metrics,
+      .stat-grid,
+      .score-meta {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">Fxiaoke Store Intelligence Demo · v2</div>
+        <h1>门店潜力评估 · 画像 v2</h1>
+        <p>在 v1 门店池与画像详情基础上，新增「潜力分可视化」：五维雷达图、Top3 驱动、风险扣分与三级分数拆解 explain。所有分数来自 07 打分模型 Demo 跑分，为 10 店潜力评估的唯一数据源（依 06 主契约，画像必须说明驱动维度，禁止只报总分）。</p>
+      </div>
+      <div class="hero-card stat-grid" id="summaryStats"></div>
+    </section>
+
+    <section class="layout">
+      <aside class="panel">
+        <div class="panel-title">
+          <h2>门店池</h2>
+          <span id="resultCount"></span>
+        </div>
+        <div class="filters">
+          <input id="searchInput" type="text" placeholder="搜索门店名 / 城市 / 标签" />
+          <select id="tierFilter"></select>
+          <select id="formatFilter"></select>
+          <select id="scoreFilter"></select>
+        </div>
+        <div class="store-list" id="storeList"></div>
+      </aside>
+
+      <main class="panel">
+        <div class="panel-title">
+          <h2>门店画像详情</h2>
+          <span>统一口径：近90天经营信号 · 分数源 07 §6</span>
+        </div>
+        <div id="detailView"></div>
+      </main>
+    </section>
+  </div>
+
+  <script>
+    /* =========================================================
+       数据源 A：10 店原始画像字段（来自 04_门店标签Demo.md）
+    ========================================================= */
+    const stores = [
+      {
+        id: "S001", tenantEnterpriseId: "T001", tenantEnterpriseName: "纷享样例饮料事业部",
+        name: "上海静安万航便利店", city: "上海", cityTier: "一线", formatType: "便利店",
+        businessCircle: "写字楼+社区", area: 118, openYears: 6,
+        assets: { pos: 2, cooler: 4, freezer: 1, shelfGroup: 12, stack: 2, digital: "是" },
+        trading: { amount90d: 286000, orderCount90d: 164, avgOrder90d: 1744, activeDays90d: 63, categoryCount90d: 14, promoRatio90d: 0.42, topCategories: ["饮料", "休食", "乳品", "酒水"] },
+        tenantView: { penetrationStatus: "已合作-中高渗透", orderAmount90d: 96800, orderCount90d: 54, activeDays90d: 31, lastOrderDate: "2026-08-01", visitCount90d: 11, avgStay90d: 18, orderAfterVisitRatio90d: 0.64, opportunityTags: ["冷柜扩排面", "白领场景提价带", "夜间功能饮料增量"], riskTags: ["竞品强占主位", "夜间高峰易断货"] },
+        inventory: { onSaleSku: 426, facingCount: 96, units: 1820, amount: 96800, oos: "否", lastRestock: "2026-08-01" },
+        visits: { count90d: 11, avgStay90d: 18, orderAfterVisitRatio90d: 0.64 },
+        competitor: { brands: ["美宜佳严选", "统一", "农夫山泉", "伊利"], skuCount: 58, priceBand: "3-12元", facingCount: 28, displayPosition: "冷柜主位+收银台侧架", promoStatus: "常态买赠" },
+        agreements: { count: 3, fee: 16800 },
+        opportunityCategories: ["即饮饮料", "低温乳品", "高端零食", "能量饮料"],
+        riskFlags: ["排面偏紧", "夜间高峰缺货风险"],
+        storeGlobalTags: ["高流量白领店", "冷饮强势", "高频快消消费"],
+        tenantCoreTags: ["高转化拜访响应", "高潜扩品店", "份额提升优先"],
+        persona: "白领与社区双客群叠加，现有饮料与休食基础强，拜访后转单效率高，适合做冷饮、功能饮料与高毛利零食深分销。",
+        insights: {
+          oneLiner: "一线办公+社区复合场景，高频便利消费明显，是即饮与高毛利零食扩品优先级高的门店。",
+          facts: ["近90天订单金额28.6万元，活跃下单63天，采购品类14个。", "配置4台冷藏柜、96个排面，在售SKU数426，具备较强陈列承载力。", "拜访11次，拜访后下单转化率64%，说明对销售动作响应较好。", "竞品SKU数58，且占据冷柜主位与收银台侧架，竞争充分但市场教育成熟。"],
+          judgments: ["现阶段重点不是是否进店，而是能否提升更优排面与份额。", "具备新品试投能力，适合承接功能饮料与低温乳品组合。", "夜间高峰缺货若持续，会削弱促销转化。"],
+          actions: ["争取冷柜主位与收银台联陈，优先切入功能饮料与低温乳品组合。", "围绕白领午后和夜间场景配置高毛利零食+即饮联动促销包。", "高峰日前置补货，降低夜间缺货损失。"],
+          risks: ["竞品持续占位可能导致新增SKU有铺货无动销。", "若补货机制不优化，高峰时段会重复性丢单。"]
+        },
+        signals90d: ["下单活跃天数63天，属于稳定高频采购。", "促销订单占比42%，具备较强活动承接能力。", "最近补货时间为2026-08-01，补货节奏较健康。"]
+      },
+      {
+        id: "S002", tenantEnterpriseId: "T002", tenantEnterpriseName: "纷享样例食品综合事业部",
+        name: "杭州滨江江南小馆超市", city: "杭州", cityTier: "新一线", formatType: "社区食杂店",
+        businessCircle: "社区底商", area: 86, openYears: 9,
+        assets: { pos: 1, cooler: 2, freezer: 1, shelfGroup: 8, stack: 1, digital: "是" },
+        trading: { amount90d: 132500, orderCount90d: 97, avgOrder90d: 1366, activeDays90d: 44, categoryCount90d: 11, promoRatio90d: 0.36, topCategories: ["饮料", "方便食品", "调味品"] },
+        tenantView: { penetrationStatus: "已合作-低渗透", orderAmount90d: 35600, orderCount90d: 23, activeDays90d: 16, lastOrderDate: "2026-07-29", visitCount90d: 8, avgStay90d: 22, orderAfterVisitRatio90d: 0.50, opportunityTags: ["家庭装扩容", "节令堆头", "周末组合包"], riskTags: ["老板偏保守", "协议执行一般"] },
+        inventory: { onSaleSku: 273, facingCount: 64, units: 1290, amount: 51200, oos: "否", lastRestock: "2026-07-30" },
+        visits: { count90d: 8, avgStay90d: 22, orderAfterVisitRatio90d: 0.50 },
+        competitor: { brands: ["康师傅", "统一", "可口可乐", "海天"], skuCount: 46, priceBand: "2-10元", facingCount: 24, displayPosition: "主货架中层", promoStatus: "节庆堆头" },
+        agreements: { count: 2, fee: 7200 },
+        opportunityCategories: ["啤酒", "家庭装饮料", "速冻食品"],
+        riskFlags: ["老板偏保守", "协议执行一般"],
+        storeGlobalTags: ["家庭消费主导", "基础补货稳定", "社区备货店"],
+        tenantCoreTags: ["可教育扩品店", "家庭场景提升店"],
+        persona: "家庭型消费明显，交易稳定但品类宽度不足，适合通过组合陈列和节令活动切入家庭饮料与速冻扩品。",
+        insights: {
+          oneLiner: "新一线社区家庭消费店，交易稳定，适合通过节令场景推动家庭装与速冻扩品。",
+          facts: ["近90天订单金额13.25万元，订单97笔，活跃下单44天。", "在售SKU数273，排面64，基础承载够用但深度一般。", "拜访后下单转化率50%，教育型拜访有较稳定反馈。"],
+          judgments: ["门店经营偏稳态，对新品接受度取决于老板信任与组合收益。", "社区家庭备货场景明确，适合做多件组合。", "当前不是高爆发店，但属于可持续培育店。"],
+          actions: ["围绕周末家庭采购推出饮料+速冻组合陈列。", "用低门槛协议费换取节令堆头与冰柜次优位置。", "分阶段引入家庭装水与啤酒整箱品。"],
+          risks: ["老板保守会拉长上新节奏。", "协议执行一般，需跟进陈列落地。"]
+        },
+        signals90d: ["活跃下单44天，说明复购稳定但不算高频。", "促销订单占比36%，对活动敏感但未过度依赖。", "最近补货时间为2026-07-30，库存周转正常。"]
+      },
+      {
+        id: "S003", tenantEnterpriseId: "T001", tenantEnterpriseName: "纷享样例饮料事业部",
+        name: "成都武侯玉林烟酒便利", city: "成都", cityTier: "新一线", formatType: "烟酒店",
+        businessCircle: "社区夜经济", area: 72, openYears: 12,
+        assets: { pos: 1, cooler: 3, freezer: 0, shelfGroup: 7, stack: 2, digital: "否" },
+        trading: { amount90d: 168800, orderCount90d: 82, avgOrder90d: 2059, activeDays90d: 39, categoryCount90d: 9, promoRatio90d: 0.18, topCategories: ["酒水", "饮料", "休食"] },
+        tenantView: { penetrationStatus: "竞品压制-待突破", orderAmount90d: 21800, orderCount90d: 11, activeDays90d: 8, lastOrderDate: "2026-07-17", visitCount90d: 6, avgStay90d: 16, orderAfterVisitRatio90d: 0.33, opportunityTags: ["夜场功能饮料替换", "收银台小规格渗透"], riskTags: ["数字化弱", "竞品强曝光", "单一酒水依赖"] },
+        inventory: { onSaleSku: 198, facingCount: 52, units: 860, amount: 68800, oos: "否", lastRestock: "2026-07-28" },
+        visits: { count90d: 6, avgStay90d: 16, orderAfterVisitRatio90d: 0.33 },
+        competitor: { brands: ["红牛", "东鹏特饮", "雪花", "百威"], skuCount: 39, priceBand: "5-18元", facingCount: 21, displayPosition: "门头堆箱+收银台后柜", promoStatus: "啤酒冰冻促销" },
+        agreements: { count: 1, fee: 5000 },
+        opportunityCategories: ["功能饮料", "预调酒", "夜宵零食"],
+        riskFlags: ["数字化弱", "单一酒水依赖"],
+        storeGlobalTags: ["夜场消费驱动", "高客单", "酒水主导店"],
+        tenantCoreTags: ["能量饮料机会店", "数字化待激活店"],
+        persona: "夜间消费能力强，高客单但经营偏酒水单线，若补齐数字化订货与功能饮料组合，可提升复购与白天时段销量。",
+        insights: {
+          oneLiner: "夜经济驱动的烟酒店，高客单强，但经营结构偏单线，适合做功能饮料和夜宵搭售。",
+          facts: ["近90天单笔均额2059元，高于样例均值。", "促销订单占比仅18%，说明更多依赖自然需求。", "竞品已在门头堆箱和收银台后柜形成明显曝光。"],
+          judgments: ["门店有夜间刚需流量，但白天品类贡献不足。", "数字化订货能力弱，会限制补货和上新品效率。", "若能把功能饮料做成夜间必备，可提高非酒水占比。"],
+          actions: ["先以功能饮料+夜宵零食做小规模联陈测试。", "引导使用数字化订货，缩短补货决策周期。", "围绕夜宵时段设计冰冻啤酒与功能饮料双场景陈列。"],
+          risks: ["酒水依赖过高导致品类扩展慢。", "老板若拒绝数字化，后续精细经营难推进。"]
+        },
+        signals90d: ["高客单但活跃天数仅39天，说明采购集中。", "竞品促销以冰冻啤酒为主，市场教育成熟。", "补货时间距今较短，但仍需优化日常数字化补货。"]
+      },
+      {
+        id: "S004", tenantEnterpriseId: "T003", tenantEnterpriseName: "纷享样例校园渠道事业部",
+        name: "武汉光谷校园驿站", city: "武汉", cityTier: "二线", formatType: "校园店",
+        businessCircle: "高校生活区", area: 55, openYears: 4,
+        assets: { pos: 1, cooler: 2, freezer: 0, shelfGroup: 6, stack: 1, digital: "是" },
+        trading: { amount90d: 119600, orderCount90d: 143, avgOrder90d: 836, activeDays90d: 58, categoryCount90d: 10, promoRatio90d: 0.47, topCategories: ["饮料", "休食", "文具", "冰品"] },
+        tenantView: { penetrationStatus: "已合作-中渗透", orderAmount90d: 42800, orderCount90d: 49, activeDays90d: 27, lastOrderDate: "2026-07-26", visitCount90d: 10, avgStay90d: 19, orderAfterVisitRatio90d: 0.57, opportunityTags: ["开学季补货", "高频低价组合", "端架转化提升"], riskTags: ["暑期波动", "缺货频发", "价格敏感"] },
+        inventory: { onSaleSku: 241, facingCount: 71, units: 940, amount: 40800, oos: "是", lastRestock: "2026-07-25" },
+        visits: { count90d: 10, avgStay90d: 19, orderAfterVisitRatio90d: 0.57 },
+        competitor: { brands: ["元气森林", "今麦郎", "卫龙"], skuCount: 43, priceBand: "2-8元", facingCount: 26, displayPosition: "收银台端架+冷柜侧位", promoStatus: "第二件半价" },
+        agreements: { count: 2, fee: 3600 },
+        opportunityCategories: ["即饮茶", "冰品", "早餐面包", "低价零食"],
+        riskFlags: ["暑期客流波动", "缺货频发"],
+        storeGlobalTags: ["年轻客群高频", "价格敏感", "促销响应好"],
+        tenantCoreTags: ["补货待优化店", "校园场景优先店"],
+        persona: "学生客群高频小额购买，促销拉动明显，但缺货会直接损失销量，适合做高频快周转单品与暑期开学档专项补货。",
+        insights: {
+          oneLiner: "年轻客群高频小单店，价格敏感且对促销响应好，关键在于补货与学期节奏管理。",
+          facts: ["订单143笔但单笔均额836元，符合校园小单高频特征。", "促销订单占比47%，说明活动拉动显著。", "缺货标记为是，最近补货时间为2026-07-25，存在补货滞后。"],
+          judgments: ["这是典型快周转门店，缺货比价格更伤销量。", "学生消费场景下，低价高频产品更容易形成稳定动销。", "适合围绕开学季、考试季做节点性经营。"],
+          actions: ["优先保障即饮茶、冰品、早餐面包的连续供给。", "围绕收银台端架做第二件半价的零食联动。", "建立学期节点补货清单，避免暑期与开学切换缺货。"],
+          risks: ["客流季节性波动明显。", "若缺货持续，竞品替代会很快发生。"]
+        },
+        signals90d: ["活跃下单58天，属于高频采购店。", "缺货标记为是，说明库存健康度是当前短板。", "竞品在端架和冷柜侧位促销活跃。"]
+      },
+      {
+        id: "S005", tenantEnterpriseId: "T004", tenantEnterpriseName: "纷享样例乳品事业部",
+        name: "长沙雨花惠民生鲜小店", city: "长沙", cityTier: "二线", formatType: "生鲜小店",
+        businessCircle: "社区菜场周边", area: 93, openYears: 7,
+        assets: { pos: 1, cooler: 1, freezer: 2, shelfGroup: 9, stack: 1, digital: "否" },
+        trading: { amount90d: 95600, orderCount90d: 71, avgOrder90d: 1346, activeDays90d: 33, categoryCount90d: 8, promoRatio90d: 0.21, topCategories: ["乳品", "饮料", "调味品"] },
+        tenantView: { penetrationStatus: "已合作-低渗透", orderAmount90d: 18600, orderCount90d: 14, activeDays90d: 10, lastOrderDate: "2026-08-02", visitCount90d: 5, avgStay90d: 24, orderAfterVisitRatio90d: 0.28, opportunityTags: ["生鲜导流转乳品", "早餐佐餐场景"], riskTags: ["非生鲜关注弱", "拜访转化低"] },
+        inventory: { onSaleSku: 186, facingCount: 48, units: 1520, amount: 43800, oos: "否", lastRestock: "2026-08-02" },
+        visits: { count90d: 5, avgStay90d: 24, orderAfterVisitRatio90d: 0.28 },
+        competitor: { brands: ["蒙牛", "农夫山泉", "海天"], skuCount: 31, priceBand: "3-15元", facingCount: 18, displayPosition: "生鲜入口侧架", promoStatus: "无明显促销" },
+        agreements: { count: 1, fee: 2800 },
+        opportunityCategories: ["常温乳品", "家庭装水", "佐餐饮料"],
+        riskFlags: ["进店动线偏生鲜", "非生鲜关注弱"],
+        storeGlobalTags: ["生鲜导流型门店", "附带销售弱", "家庭备货场景"],
+        tenantCoreTags: ["家庭装机会店", "需陈列教育店"],
+        persona: "生鲜带来稳定进店流量，但快消附带购开发不足，适合围绕家庭备货与佐餐场景做陈列联动。",
+        insights: {
+          oneLiner: "生鲜导流明显，但快消附带购较弱，适合围绕家庭备货与佐餐场景做低成本扩品。",
+          facts: ["近90天订单金额9.56万元，活跃下单33天。", "库存量1520件但排面只有48，说明更多是后仓备货而非前台展示。", "拜访后下单转化率28%，需要更强的场景化说服。"],
+          judgments: ["这类门店不是没有客流，而是快消注意力不足。", "家庭装和佐餐饮料更容易顺着生鲜购买链路成交。", "需要用动线与陈列提升非生鲜触达。"],
+          actions: ["在生鲜入口侧架强化家庭装水与佐餐饮料陈列。", "将乳品与早餐食材进行邻近陈列。", "用低投入试销单品替代一次性大铺货。"],
+          risks: ["若动线不调整，快消新品很难被看到。", "数字化弱会拖慢补货反馈。"]
+        },
+        signals90d: ["最近补货时间为2026-08-02，补货及时。", "促销占比21%，说明活动影响有限。", "库存金额4.38万元，需避免低效积压。"]
+      },
+      {
+        id: "S006", tenantEnterpriseId: "T005", tenantEnterpriseName: "纷享样例家清酒水事业部",
+        name: "临沂兰山兴隆批零店", city: "临沂", cityTier: "三线", formatType: "夫妻店",
+        businessCircle: "社区+批零混合", area: 145, openYears: 11,
+        assets: { pos: 1, cooler: 3, freezer: 1, shelfGroup: 14, stack: 3, digital: "是" },
+        trading: { amount90d: 224300, orderCount90d: 109, avgOrder90d: 2058, activeDays90d: 41, categoryCount90d: 13, promoRatio90d: 0.26, topCategories: ["饮料", "酒水", "日化", "休食"] },
+        tenantView: { penetrationStatus: "已合作-中渗透", orderAmount90d: 76200, orderCount90d: 36, activeDays90d: 18, lastOrderDate: "2026-07-31", visitCount90d: 7, avgStay90d: 27, orderAfterVisitRatio90d: 0.46, opportunityTags: ["整箱促销扩类", "家清高复购渗透"], riskTags: ["库存深", "资金占压偏高"] },
+        inventory: { onSaleSku: 388, facingCount: 102, units: 2640, amount: 113500, oos: "否", lastRestock: "2026-07-31" },
+        visits: { count90d: 7, avgStay90d: 27, orderAfterVisitRatio90d: 0.46 },
+        competitor: { brands: ["康师傅", "东鹏", "洁柔", "蓝月亮"], skuCount: 67, priceBand: "3-25元", facingCount: 37, displayPosition: "门头箱陈+通道端架", promoStatus: "周末整箱促销" },
+        agreements: { count: 2, fee: 9200 },
+        opportunityCategories: ["家清纸品", "整箱饮料", "餐饮渠道酒水"],
+        riskFlags: ["资金占压偏高", "库存深"],
+        storeGlobalTags: ["批零兼营", "库存深", "整箱能力强"],
+        tenantCoreTags: ["跨品类拓展店", "库存结构优化优先"],
+        persona: "具备批零兼营能力，整箱周转基础好，若优化库存结构并引入家清高复购品，可显著提升坪效。",
+        insights: {
+          oneLiner: "三线批零兼营店，整箱与家庭囤货能力强，但库存偏深，需要结构化优化。",
+          facts: ["订单金额22.43万元，单笔均额2058元，体现批零混合特征。", "在售SKU数388，排面102，具备深陈列能力。", "库存金额11.35万元，明显高于样例中位水平。"],
+          judgments: ["门店具备扩品承载力，但不能继续无差别加SKU。", "更适合导入高复购、整箱化、周转明确的品类。", "如果库存结构优化到位，潜力会进一步释放。"],
+          actions: ["优先导入整箱饮料与家清高复购SKU。", "按动销分层梳理库存，压缩低周转SKU。", "围绕周末整箱促销争取通道端架连续曝光。"],
+          risks: ["库存占压会影响新增采购预算。", "若新增SKU周转慢，会继续放大资金压力。"]
+        },
+        signals90d: ["活跃下单41天，频次一般但单次采购量大。", "库存深度高，适合但也依赖精细库存管理。", "竞品周末整箱促销说明家庭囤货需求存在。"]
+      },
+      {
+        id: "S007", tenantEnterpriseId: "T006", tenantEnterpriseName: "纷享样例基础覆盖事业部",
+        name: "南通启东渔港食杂店", city: "南通", cityTier: "三线", formatType: "社区食杂店",
+        businessCircle: "乡镇主街", area: 68, openYears: 15,
+        assets: { pos: 1, cooler: 1, freezer: 0, shelfGroup: 5, stack: 1, digital: "否" },
+        trading: { amount90d: 52300, orderCount90d: 38, avgOrder90d: 1376, activeDays90d: 19, categoryCount90d: 6, promoRatio90d: 0.12, topCategories: ["调味品", "方便食品", "酒水"] },
+        tenantView: { penetrationStatus: "待开发", orderAmount90d: 0, orderCount90d: 0, activeDays90d: 0, lastOrderDate: "无", visitCount90d: 3, avgStay90d: 13, orderAfterVisitRatio90d: 0.17, opportunityTags: ["基础覆盖", "低门槛首单", "唤醒拜访"], riskTags: ["客流下滑", "补货慢", "低意愿"] },
+        inventory: { onSaleSku: 123, facingCount: 33, units: 680, amount: 27100, oos: "是", lastRestock: "2026-07-20" },
+        visits: { count90d: 3, avgStay90d: 13, orderAfterVisitRatio90d: 0.17 },
+        competitor: { brands: ["海天", "统一", "雪花"], skuCount: 19, priceBand: "2-12元", facingCount: 11, displayPosition: "里侧货架底层", promoStatus: "无" },
+        agreements: { count: 0, fee: 0 },
+        opportunityCategories: ["基础饮料", "家庭调味", "小包装乳品"],
+        riskFlags: ["客流下滑", "补货慢", "拜访转化低"],
+        storeGlobalTags: ["乡镇守成型", "低活跃", "经营意愿弱"],
+        tenantCoreTags: ["需唤醒经营意愿店", "低成本渗透店"],
+        persona: "经营保守且补货节奏慢，短期应优先做基础品类恢复与低门槛促销，不宜直接推高端或复杂组合。",
+        insights: {
+          oneLiner: "乡镇低活跃守成店，重点在于恢复基础动销，而非追求复杂扩品。",
+          facts: ["近90天仅活跃下单19天，交易频次明显偏低。", "缺货标记为是，最近补货时间为2026-07-20，补货滞后。", "拜访后下单转化率17%，说明当前经营意愿偏弱。"],
+          judgments: ["这类门店的核心问题是经营惯性，而不是单点缺品。", "需要先用基础高周转SKU建立合作信心。", "中高端新品短期难形成有效动销。"],
+          actions: ["先用基础饮料与小包装乳品做低门槛恢复铺货。", "减少一次拜访目标，聚焦1-2个确定性单品。", "以补货提醒和简单促销做经营唤醒。"],
+          risks: ["若客流持续下滑，新增投入回报有限。", "拜访频率增加不一定转化，需要控制销售成本。"]
+        },
+        signals90d: ["活跃度低，且促销订单占比仅12%。", "竞品存在但陈列不强，说明市场未被充分经营。", "长周期未补货是当前最大经营信号。"]
+      },
+      {
+        id: "S008", tenantEnterpriseId: "T001", tenantEnterpriseName: "纷享样例饮料事业部",
+        name: "昆明官渡云岭连锁便民店", city: "昆明", cityTier: "二线", formatType: "便利店",
+        businessCircle: "交通枢纽周边", area: 132, openYears: 5,
+        assets: { pos: 2, cooler: 5, freezer: 1, shelfGroup: 13, stack: 2, digital: "是" },
+        trading: { amount90d: 248900, orderCount90d: 152, avgOrder90d: 1638, activeDays90d: 61, categoryCount90d: 15, promoRatio90d: 0.40, topCategories: ["饮料", "休食", "乳品", "速食", "日化"] },
+        tenantView: { penetrationStatus: "已合作-高渗透", orderAmount90d: 112400, orderCount90d: 61, activeDays90d: 34, lastOrderDate: "2026-08-01", visitCount90d: 12, avgStay90d: 21, orderAfterVisitRatio90d: 0.68, opportunityTags: ["新品试投", "枢纽场景组合", "高峰时段扩陈列"], riskTags: ["鲜食供给不足", "排面竞争加剧"] },
+        inventory: { onSaleSku: 452, facingCount: 118, units: 1910, amount: 101200, oos: "否", lastRestock: "2026-08-01" },
+        visits: { count90d: 12, avgStay90d: 21, orderAfterVisitRatio90d: 0.68 },
+        competitor: { brands: ["可口可乐", "统一", "百事", "伊利"], skuCount: 61, priceBand: "3-15元", facingCount: 34, displayPosition: "冷柜黄金位+门口堆头", promoStatus: "联合满赠" },
+        agreements: { count: 3, fee: 15400 },
+        opportunityCategories: ["鲜食便当", "功能饮料", "旅行装日化"],
+        riskFlags: ["鲜食供给不足"],
+        storeGlobalTags: ["通勤高流量", "全时段消费", "新品承接强"],
+        tenantCoreTags: ["样板店", "高潜增购店"],
+        persona: "通勤与过路客流稳定，具备新品承接能力，适合拓展鲜食、功能饮料与旅行装高频场景品。",
+        insights: {
+          oneLiner: "交通枢纽高流量便利店，全时段消费稳定，是新品试投和场景化扩品的优先样板店。",
+          facts: ["近90天订单金额24.89万元，活跃下单61天，采购品类15个。", "5台冷藏柜、118个排面、在售SKU452，承载力处于样例前列。", "拜访后下单转化率68%，说明销售动作接受度非常高。"],
+          judgments: ["门店不仅能卖，还能承担新品试销和场景验证。", "鲜食供给不足意味着仍有高频机会未被满足。", "竞品强但也意味着用户需求已被验证。"],
+          actions: ["优先导入鲜食便当和功能饮料，配套冷柜黄金位陈列。", "围绕通勤早晚高峰做旅行装日化和即食组合。", "将该店纳入重点样板店，验证新品转化。"],
+          risks: ["若鲜食供应链不稳定，容易损伤门店信心。", "高流量场景下排面竞争会持续加剧。"]
+        },
+        signals90d: ["活跃下单61天，接近全周多频采购。", "促销订单占比40%，对联合活动承接良好。", "最近补货时间为2026-08-01，补货节奏健康。"]
+      },
+      {
+        id: "S009", tenantEnterpriseId: "T004", tenantEnterpriseName: "纷享样例乳品事业部",
+        name: "郑州金水晨光便利店", city: "郑州", cityTier: "新一线", formatType: "便利店",
+        businessCircle: "医院周边", area: 64, openYears: 3,
+        assets: { pos: 1, cooler: 2, freezer: 0, shelfGroup: 7, stack: 1, digital: "是" },
+        trading: { amount90d: 143700, orderCount90d: 126, avgOrder90d: 1140, activeDays90d: 55, categoryCount90d: 12, promoRatio90d: 0.51, topCategories: ["饮料", "乳品", "面包", "休食"] },
+        tenantView: { penetrationStatus: "已合作-中渗透", orderAmount90d: 51800, orderCount90d: 42, activeDays90d: 25, lastOrderDate: "2026-08-02", visitCount90d: 9, avgStay90d: 17, orderAfterVisitRatio90d: 0.62, opportunityTags: ["医疗场景营养早餐", "低糖乳品提升"], riskTags: ["低价促销依赖偏高"] },
+        inventory: { onSaleSku: 267, facingCount: 74, units: 980, amount: 46200, oos: "否", lastRestock: "2026-08-02" },
+        visits: { count90d: 9, avgStay90d: 17, orderAfterVisitRatio90d: 0.62 },
+        competitor: { brands: ["伊利", "蒙牛", "康师傅", "达利园"], skuCount: 44, priceBand: "2-10元", facingCount: 22, displayPosition: "收银台前架+冷柜次主位", promoStatus: "高频特价" },
+        agreements: { count: 2, fee: 5800 },
+        opportunityCategories: ["营养早餐", "低糖饮料", "即食粥品"],
+        riskFlags: ["低价促销依赖偏高"],
+        storeGlobalTags: ["医疗场景刚需店", "早餐消费强", "高频小单店"],
+        tenantCoreTags: ["促销驱动明显", "健康化升级店"],
+        persona: "医院陪护与早餐需求稳定，适合围绕即食早餐与低糖健康饮品做组合成交，并逐步降低纯价格驱动。",
+        insights: {
+          oneLiner: "医院周边刚需消费店，早餐与陪护场景明确，适合做健康化和即食化组合扩品。",
+          facts: ["订单126笔，活跃下单55天，属于持续高频店。", "促销订单占比51%，说明当前成交较依赖价格刺激。", "竞品在收银台前架和冷柜次主位有稳定陈列。"],
+          judgments: ["门店需求是真实刚需，适合做早餐和陪护补给场景。", "未来优化方向不是再降价，而是提高组合价值。", "低糖、营养属性产品更符合医院周边场景。"],
+          actions: ["推出面包+低糖饮料+即食粥品的早餐组合。", "争取收银台前架的健康小包装陈列。", "逐步用场景包替代单纯特价。"],
+          risks: ["持续价格战会压缩利润空间。", "若健康定位不清晰，组合包难形成差异。"]
+        },
+        signals90d: ["促销依赖高，但门店本身活跃度健康。", "最近补货时间为2026-08-02，库存周转较及时。", "早餐与即时消费特征明显。"]
+      },
+      {
+        id: "S010", tenantEnterpriseId: "T006", tenantEnterpriseName: "纷享样例基础覆盖事业部",
+        name: "县城家家福综合商店", city: "周口", cityTier: "县镇", formatType: "夫妻店",
+        businessCircle: "县城居民区", area: 58, openYears: 10,
+        assets: { pos: 1, cooler: 1, freezer: 0, shelfGroup: 4, stack: 0, digital: "否" },
+        trading: { amount90d: 41800, orderCount90d: 29, avgOrder90d: 1441, activeDays90d: 16, categoryCount90d: 5, promoRatio90d: 0.10, topCategories: ["方便食品", "酒水", "调味品"] },
+        tenantView: { penetrationStatus: "待开发", orderAmount90d: 0, orderCount90d: 0, activeDays90d: 0, lastOrderDate: "无", visitCount90d: 2, avgStay90d: 11, orderAfterVisitRatio90d: 0.12, opportunityTags: ["基础覆盖", "低成本陈列改善", "首单转化"], riskTags: ["客流弱", "资金有限", "数字化缺失"] },
+        inventory: { onSaleSku: 98, facingCount: 24, units: 520, amount: 20600, oos: "是", lastRestock: "2026-07-18" },
+        visits: { count90d: 2, avgStay90d: 11, orderAfterVisitRatio90d: 0.12 },
+        competitor: { brands: ["白象", "海天", "当地酒水"], skuCount: 16, priceBand: "2-9元", facingCount: 8, displayPosition: "靠墙低层", promoStatus: "无" },
+        agreements: { count: 0, fee: 0 },
+        opportunityCategories: ["基础饮料", "袋装乳品", "儿童零食"],
+        riskFlags: ["客流弱", "陈列差", "资金有限", "数字化缺失"],
+        storeGlobalTags: ["县镇低活跃店", "基础覆盖不足", "陈列弱"],
+        tenantCoreTags: ["低成本渗透店", "基础恢复优先店"],
+        persona: "处于低活跃状态，先做基础覆盖与低投入陈列改善更现实，适合从高周转低门槛单品切入。",
+        insights: {
+          oneLiner: "县镇低活跃夫妻店，现阶段适合基础覆盖和低成本渗透，不适合复杂策略。",
+          facts: ["近90天订单金额4.18万元，仅活跃下单16天。", "在售SKU数98，排面24，承载力有限。", "缺货标记为是，最近补货时间为2026-07-18，补货明显滞后。"],
+          judgments: ["门店当前不具备承接高复杂度扩品的经营基础。", "应该先围绕基础饮料和儿童零食恢复周转。", "销售动作要控制成本，避免高频低效拜访。"],
+          actions: ["先投放高周转基础饮料和袋装乳品。", "提供简单价签与靠墙改善陈列。", "降低单次谈判复杂度，聚焦1-2个确定性SKU。"],
+          risks: ["资金有限会影响持续补货。", "若客流继续走弱，渗透回报周期会拉长。"]
+        },
+        signals90d: ["活跃度低，促销占比也低，说明整体经营惯性明显。", "缺货与长周期未补货叠加，是主要风险信号。", "竞品渗透不深，但门店经营天花板也较低。"]
+      }
+    ];
+
+    /* =========================================================
+       数据源 B：10 店分数（唯一数据源 = 07 §6，一字不差）
+       final / level / rank / raw / calibrated / risk / 五维 / risk_items
+    ========================================================= */
+    const scores = {
+      S001: { final: 86.6, level: "高潜", rank: 0.866, raw: 83.8, calibrated: 86.6, risk: 0, riskItems: [], base: 89.9, asset: 77.7, performance: 87.8, opportunity: 84.7, reachability: 74.0,
+        drivers: [["performance", "成交54单/31天/14品类，促销健康0.42≤0.45"], ["opportunity", "竞品58SKU(市场成熟)+中高渗透"], ["base", "一线便利店，面积118㎡"]],
+        explainNote: "full" },
+      S002: { final: 70.6, level: "成长", rank: 0.706, raw: 66.7, calibrated: 70.6, risk: 0, riskItems: [], base: 68.3, asset: 60.5, performance: 61.2, opportunity: 78.6, reachability: 62.4,
+        drivers: [["opportunity", "低渗透+家庭装扩容78.6"], ["performance", "61.2"], ["base", "社区食杂店68.3"]],
+        explainNote: "simple" },
+      S003: { final: 66.7, level: "基础", rank: 0.667, raw: 63.2, calibrated: 67.7, risk: 1, riskItems: ["risk_odc"], base: 71.0, asset: 55.6, performance: 53.9, opportunity: 84.2, reachability: 46.9,
+        drivers: [["opportunity", "竞品压制-待突破(夜功能饮料)84.2"], ["performance", "待突破单线53.9"], ["base", "烟酒店单窄(9品类)受限"]],
+        explainNote: "full" },
+      S004: { final: 63.3, level: "基础", rank: 0.633, raw: 67.5, calibrated: 71.3, risk: 8, riskItems: ["risk_oos"], base: 66.3, asset: 58.2, performance: 71.0, opportunity: 71.0, reachability: 65.4,
+        drivers: [["performance", "促销敏感71.0"], ["opportunity", "校园中渗透71.0"], ["risk", "缺货 -8，由71.3降至63.3"]],
+        explainNote: "simple" },
+      S005: { final: 56.5, level: "基础", rank: 0.565, raw: 56.5, calibrated: 61.5, risk: 5, riskItems: ["risk_lowconv", "risk_odc"], base: 66.7, asset: 48.5, performance: 50.0, opportunity: 66.3, reachability: 51.3,
+        drivers: [["opportunity", "生鲜导流+家庭装66.3"], ["performance", "低渗透50.0"], ["base", "生鲜小店但非生鲜关注弱"]],
+        explainNote: "simple" },
+      S006: { final: 70.6, level: "成长", rank: 0.706, raw: 72.5, calibrated: 75.6, risk: 5, riskItems: ["risk_stock"], base: 72.3, asset: 68.1, performance: 75.2, opportunity: 78.2, reachability: 62.2,
+        drivers: [["performance", "75.2(36单/18天/13品类)"], ["opportunity", "批零整箱盘78.2"], ["base", "面积145㎡夫妻店(+5 库存占压扣分)"]],
+        explainNote: "simple" },
+      S007: { final: 27.2, level: "低效", rank: 0.272, raw: 42.6, calibrated: 47.2, risk: 20, riskItems: ["risk_oos", "risk_churn"], base: 50.7, asset: 41.7, performance: 21.8, opportunity: 72.4, reachability: 27.3,
+        drivers: [["opportunity", "待开发空白72.4"], ["performance", "无订单21.8"], ["risk", "缺货+无订单 -20"]],
+        explainNote: "simple" },
+      S008: { final: 87.5, level: "高潜", rank: 0.875, raw: 84.8, calibrated: 87.5, risk: 0, riskItems: [], base: 85.2, asset: 81.9, performance: 92.0, opportunity: 80.3, reachability: 80.2,
+        drivers: [["performance", "高渗透成交61单/活跃34天/15品类"], ["opportunity", "高客单盘+渗透上行"], ["base", "便利店+交通枢纽，面积132㎡"]],
+        explainNote: "simple" },
+      S009: { final: 71.8, level: "成长", rank: 0.718, raw: 68.1, calibrated: 71.8, risk: 0, riskItems: [], base: 72.7, asset: 57.9, performance: 71.5, opportunity: 70.2, reachability: 63.4,
+        drivers: [["performance", "42单/25天/12品类，客单与促销(0.51偏高)"], ["opportunity", "中渗透+医院刚需盘70.2"], ["base", "新一线便利店72.7"]],
+        explainNote: "simple" },
+      S010: { final: 21.5, level: "低效", rank: 0.215, raw: 37.6, calibrated: 41.5, risk: 20, riskItems: ["risk_oos", "risk_churn"], base: 42.9, asset: 25.2, performance: 21.3, opportunity: 70.9, reachability: 21.8,
+        drivers: [["opportunity", "待开发空白70.9"], ["performance", "无订单21.3"], ["risk", "缺货+无订单 -20"]],
+        explainNote: "full" }
+    };
+
+    /* 维度中文名与颜色（雷达图图例） */
+    const DIMS = [
+      { code: "base",        label: "基础盘面",   color: "#a14f2a" },
+      { code: "asset",       label: "资产承载",   color: "#1f6b5c" },
+      { code: "performance", label: "交易表现",   color: "#c7792f" },
+      { code: "opportunity", label: "竞争与机会", color: "#7a8a2a" },
+      { code: "reachability",label: "触达可转化", color: "#7a5c8a" }
+    ];
+
+    /* 风险项代码 → 文案 */
+    const RISK_LABEL = {
+      risk_oos: "缺货风险",
+      risk_stock: "库存占压",
+      risk_churn: "流失/断档信号(无订单)",
+      risk_lowconv: "低转化异常",
+      risk_odc: "数据可信度不足"
+    };
+
+    /* =========================================================
+       07 §7 三级拆解 explain JSON（S001 / S003 / S010 用 full）
+    ========================================================= */
+    const explainFull = {
+      S001: {
+        raw_score: 83.8, calibrated_score: 86.6, risk_deduction: 0.0, confidence: 0.88,
+        evidence: [
+          { code: "performance", name: "交易表现", score: 87.8, sub: [
+            { code: "p_gmv", name: "成交规模", score: 87.9, ev: { tenant_order_amount_90d: 96800, order_amount_90d: 286000 } },
+            { code: "p_freq", name: "订单频次", score: 90.0, ev: { tenant_order_count_90d: 54 } },
+            { code: "p_act", name: "活跃天数", score: 77.5, ev: { tenant_active_order_days_90d: 31 } },
+            { code: "p_depth", name: "品类渗透深度", score: 93.3, ev: { category_count_90d: 14 } },
+            { code: "p_ph", name: "促销健康度", score: 100, ev: { promo_order_ratio_90d: 0.42 } },
+            { code: "p_aov", name: "客单价强度", score: 82.9, ev: { avg_order_value_90d: 1744 } }
+          ]},
+          { code: "opportunity", name: "竞争与机会", score: 84.7, sub: [
+            { code: "o_comp", name: "竞品市场成熟度", score: 86.0, ev: { competitor_sku_count: 58, competitor_facing_count: 28 } },
+            { code: "o_ws", name: "渗透/空白空间", score: 82, ev: { tenant_penetration_status: "已合作-中高渗透" } },
+            { code: "o_pg", name: "促销/陈列切入势能", score: 89.2, ev: { competitor_promo_status: "常态买赠", competitor_display_position: "冷柜主位+收银台侧架" } }
+          ]},
+          { code: "base", name: "基础盘面", score: 89.9, sub: [
+            { code: "b_city", name: "城市层级", score: 100, ev: { city_tier: "一线" } },
+            { code: "b_fmt", name: "业态价值度", score: 92, ev: { format_type: "便利店", business_circle: "写字楼+社区" } },
+            { code: "b_area", name: "经营面积承载", score: 73.3, ev: { area_sqm: 118 } }
+          ]}
+        ]
+      },
+      S003: {
+        raw_score: 63.2, calibrated_score: 67.7, risk_deduction: 1.0, confidence: 0.80,
+        evidence: [
+          { code: "opportunity", name: "竞争与机会", score: 84.2, sub: [
+            { code: "o_ws", name: "渗透/空白空间", score: 90, ev: { tenant_penetration_status: "竞品压制-待突破", top_categories: "酒水/饮料/休食" } },
+            { code: "o_up", name: "份额上行空间", score: 93.5, ev: { tenant_order_amount_90d: 21800, avg_order_value_90d: 2059 } },
+            { code: "o_pg", name: "促销/陈列切入势能", score: 94.0, ev: { competitor_brands: "红牛/东鹏特饮/雪花/百威", competitor_promo_status: "啤酒冰冻促销" } }
+          ]},
+          { code: "performance", name: "交易表现", score: 53.9, sub: [
+            { code: "p_freq", name: "订单频次", score: 18.3, ev: { tenant_order_count_90d: 11 } },
+            { code: "p_act", name: "活跃天数", score: 20.0, ev: { tenant_active_order_days_90d: 8 } },
+            { code: "p_depth", name: "品类渗透深度", score: 60.0, ev: { category_count_90d: 9, risk_flags: "单一酒水依赖" } }
+          ]},
+          { code: "reachability", name: "触达可转化", score: 46.9, sub: [
+            { code: "r_conv", name: "拜访后下单转化率", score: 33.0, ev: { tenant_order_after_visit_ratio_90d: 0.33 } },
+            { code: "r_cold", name: "冷启动难度", score: 68.0, ev: { digital_ordering_capability: false } }
+          ]}
+        ]
+      },
+      S010: {
+        raw_score: 37.6, calibrated_score: 41.5, risk_deduction: 20.0, confidence: 0.55,
+        risk_items: ["risk_oos", "risk_churn"],
+        evidence: [
+          { code: "performance", name: "交易表现", score: 21.3, sub: [
+            { code: "p_gmv", name: "成交规模", score: 0, ev: { tenant_order_amount_90d: 0 } },
+            { code: "p_freq", name: "订单频次", score: 0, ev: { tenant_order_count_90d: 0 } },
+            { code: "p_depth", name: "品类渗透深度", score: 33.3, ev: { category_count_90d: 5 } }
+          ]},
+          { code: "opportunity", name: "竞争与机会", score: 70.9, sub: [
+            { code: "o_ws", name: "渗透/空白空间", score: 95, ev: { tenant_penetration_status: "待开发" } },
+            { code: "o_up", name: "份额上行空间", score: 100, ev: { order_amount_90d: 41800, city_tier: "县镇" } }
+          ]},
+          { code: "reachability", name: "触达可转化", score: 21.8, sub: [
+            { code: "r_conv", name: "拜访后下单转化率", score: 12.0, ev: { tenant_order_after_visit_ratio_90d: 0.12 } },
+            { code: "r_cold", name: "冷启动难度", score: 40.0, ev: { tenant_active_order_days_90d: 0, oos_flag: true } }
+          ]}
+        ]
+      }
+    };
+
+    /* 简化版拆解（其余 7 家）维度级 → 二级关键指标简述 */
+    const explainSimple = {
+      S002: { note: "成长 · 家庭场景培育店", evidence: [
+        [ "opportunity", "竞争与机会 · 低渗透+家庭装扩容", 78.6, "已合作-低渗透 / 低渗透→可扩家庭装" ],
+        [ "performance", "交易表现 · 稳态成交但品类窄", 61.2, "23单/16天/11品类 / 促销0.36健康" ],
+        [ "base", "基础盘面 · 新一线社区底商", 68.3, "社区食杂店 / 社区底商 / 86㎡" ]
+      ]},
+      S004: { note: "基础 · 校园高频快周转，缺货为主短板", evidence: [
+        [ "performance", "竞争与机会 · 促销敏感驱动", 71.0, "促销0.47 / 低价高频" ],
+        [ "opportunity", "竞争与机会 · 校园中渗透", 71.0, "中渗透 / 开学季+端架转化" ],
+        [ "risk", "风险 · 缺货", 8, "oos_flag=是 → final由71.3扣至63.3" ]
+      ]},
+      S005: { note: "基础 · 生鲜导流但附带动销弱", evidence: [
+        [ "opportunity", "竞争与机会 · 生鲜导流+家庭装", 66.3, "低渗透 / 家庭装机会" ],
+        [ "performance", "交易表现 · 低渗透成交", 50.0, "14单/10天/8品类 / 生鲜注意力不足" ],
+        [ "base", "基础盘面 · 二线生鲜小店", 66.7, "生鲜小店 / 社区菜场周边 / 93㎡" ]
+      ]},
+      S006: { note: "成长 · 批零兼营，库存结构待优化", evidence: [
+        [ "performance", "交易表现 · 整箱+多品类", 75.2, "36单/18天/13品类 / 单笔2058" ],
+        [ "opportunity", "竞争与机会 · 批零整箱盘", 78.2, "中渗透 / 家清配额 / 周末整箱" ],
+        [ "risk", "风险 · 库存占压", 5, "库存11.35万且活跃18天<20 → -5" ]
+      ]},
+      S007: { note: "低效 · 低活跃守成店，风险集中", evidence: [
+        [ "opportunity", "竞争与机会 · 待开发空白", 72.4, "待开发 / 低门槛首单" ],
+        [ "performance", "交易表现 · 无订单", 21.8, "0单/0天 / 低活跃" ],
+        [ "risk", "风险 · 缺货+无订单", 20, "oos=是 + 近90天无订单 → -20" ]
+      ]},
+      S008: { note: "高潜 · 交通枢纽高流量样板店", evidence: [
+        [ "performance", "交易表现 · 高渗透成交", 92.0, "61单/34天/15品类 / 单笔1638" ],
+        [ "opportunity", "竞争与机会 · 高客单+渗透上行", 80.3, "高渗透 / 枢纽场景组合" ],
+        [ "base", "基础盘面 · 交通枢纽便利店", 85.2, "便利店 / 交通枢纽周边 / 132㎡" ]
+      ]},
+      S009: { note: "成长 · 医院刚需，促销依赖偏高", evidence: [
+        [ "performance", "交易表现 · 42单/25天/12品类", 71.5, "促销0.51偏高 / 医院场景" ],
+        [ "opportunity", "竞争与机会 · 中渗透+刚需", 70.2, "中渗透 / 医疗早餐+低糖" ],
+        [ "base", "基础盘面 · 新一线便利店", 72.7, "便利店 / 医院周边 / 64㎡" ]
+      ]}
+    };
+
+    /* =========================================================
+       工具
+    ========================================================= */
+    const promptTemplate = `你是一名服务于纷享销客快消行业方案团队的门店经营分析顾问。请基于输入的单店标签、潜力分与近90天经营数据，输出专业、克制、可执行的门店画像结论。
+
+【输出结构】
+1. 一句话画像
+2. 事实依据（3-5条）
+3. 经营判断（3条）
+4. 推荐动作（3条）
+5. 重点关注风险（2条）
+
+【必须使用的分析维度】
+- 门店基础：城市层级、业态、商圈、面积、开店年限
+- 资产成熟度：POS、冷藏柜、冷冻柜、货架组、堆头、数字化订货能力
+- 交易表现：近90天订单金额、订单数、单笔均额、活跃下单天数、采购品类数、促销订单占比、已采TOP品类
+- 库存表现：在售SKU数、排面数、库存量、库存金额、缺货标记、最近补货时间
+- 拜访表现：拜访次数、平均停留时长、拜访后下单转化率
+- 竞品表现：竞品品牌、竞品SKU、价格带、排面、陈列位置、促销状态
+- 协议情况：生效中活动协议数、协议费用
+- 机会品类与风险状态
+
+【潜力分数引用要求】
+- final_score / score_level / score_rank_pct / 五维得分 / Top3驱动
+- 画像必须说明驱动维度，禁止只报总分。
+
+【输入门店数据】
+{{store_json}}`;
+
+    const formatCurrency = (n) => `¥${n.toLocaleString("zh-CN")}`;
+    const formatPercent = (n) => `${Math.round(n * 100)}%`;
+
+    const levelClass = (l) => l === "高潜" ? "lev-high" : l === "成长" ? "lev-grow" : l === "基础" ? "lev-base" : "lev-low";
+    const levelColor = (l) => l === "高潜" ? "#b24029" : l === "成长" ? "#b0752a" : l === "基础" ? "#7a8a2a" : "#6b6b66";
+
+    const searchInput = document.getElementById("searchInput");
+    const tierFilter = document.getElementById("tierFilter");
+    const formatFilter = document.getElementById("formatFilter");
+    const scoreFilter = document.getElementById("scoreFilter");
+    const storeList = document.getElementById("storeList");
+    const detailView = document.getElementById("detailView");
+    const resultCount = document.getElementById("resultCount");
+    const summaryStats = document.getElementById("summaryStats");
+
+    let selectedStoreId = stores[0].id;
+
+    function initFilters() {
+      const tiers = ["全部城市层级", ...new Set(stores.map(s => s.cityTier))];
+      const formats = ["全部业态", ...new Set(stores.map(s => s.formatType))];
+      const scores = ["全部潜力分层", "高潜(85+)", "成长(70-84)", "基础(<70)"];
+      tierFilter.innerHTML = tiers.map(v => `<option value="${v}">${v}</option>`).join("");
+      formatFilter.innerHTML = formats.map(v => `<option value="${v}">${v}</option>`).join("");
+      scoreFilter.innerHTML = scores.map(v => `<option value="${v}">${v}</option>`).join("");
+    }
+
+    function renderSummary() {
+      const avgScore = Math.round(stores.reduce((s, x) => s + scores[x.id].final, 0) / stores.length);
+      const highPotential = stores.filter(s => scores[s.id].level === "高潜").length;
+      const avgOrder = Math.round(stores.reduce((s, x) => s + x.trading.amount90d, 0) / stores.length);
+      const oosCount = stores.filter(s => s.inventory.oos === "是").length;
+
+      const items = [
+        { label: "样例门店数", value: stores.length },
+        { label: "高潜门店", value: highPotential },
+        { label: "平均潜力分", value: avgScore },
+        { label: "近90天均单店GMV", value: formatCurrency(avgOrder) },
+        { label: "缺货门店", value: oosCount },
+        { label: "覆盖业态", value: new Set(stores.map(s => s.formatType)).size }
+      ];
+
+      summaryStats.innerHTML = items.map(item => `
+        <div class="stat">
+          <div class="label">${item.label}</div>
+          <div class="value">${item.value}</div>
+        </div>
+      `).join("");
+    }
+
+    function getFilteredStores() {
+      const q = searchInput.value.trim().toLowerCase();
+      const tier = tierFilter.value;
+      const format = formatFilter.value;
+      const score = scoreFilter.value;
+
+      return stores.filter(store => {
+        const text = [store.name, store.city, store.tenantEnterpriseName, ...store.storeGlobalTags, ...store.tenantCoreTags, ...store.opportunityCategories, ...store.tenantView.opportunityTags].join(" ").toLowerCase();
+        const sc = scores[store.id];
+        const matchQuery = !q || text.includes(q);
+        const matchTier = tier === "全部城市层级" || store.cityTier === tier;
+        const matchFormat = format === "全部业态" || store.formatType === format;
+        const matchScore =
+          score === "全部潜力分层" ||
+          (score === "高潜(85+)" && sc.final >= 85) ||
+          (score === "成长(70-84)" && sc.final >= 70 && sc.final < 85) ||
+          (score === "基础(<70)" && sc.final < 70);
+        return matchQuery && matchTier && matchFormat && matchScore;
+      });
+    }
+
+    function renderList() {
+      const filtered = getFilteredStores();
+      if (!filtered.find(s => s.id === selectedStoreId) && filtered.length) {
+        selectedStoreId = filtered[0].id;
+      }
+
+      resultCount.textContent = `${filtered.length} / ${stores.length} 家`;
+      storeList.innerHTML = filtered.map(store => {
+        const sc = scores[store.id];
+        return `
+        <div class="store-item ${store.id === selectedStoreId ? "active" : ""}" data-id="${store.id}">
+          <div class="store-head">
+            <div>
+              <div class="store-name">${store.name}</div>
+              <div class="meta">
+                <span class="chip">${store.city} · ${store.cityTier}</span>
+                <span class="chip">${store.formatType}</span>
+                <span class="chip">${store.area}㎡</span>
+              </div>
+            </div>
+            <div class="score">
+              <div>${sc.final}</div>
+              <div class="score-lev ${levelClass(sc.level)}">${sc.level}</div>
+            </div>
+          </div>
+          <div class="tags">
+            ${store.tenantCoreTags.slice(0, 3).map(tag => `<span class="chip strong">${tag}</span>`).join("")}
+          </div>
+          <div class="list-inline" style="margin-top:8px;">
+            <span class="chip">${store.tenantEnterpriseName}</span>
+            <span class="chip">企业订单 ${formatCurrency(store.tenantView.orderAmount90d)}</span>
+            <span class="chip">rank ${Math.round(sc.rank * 100)}%</span>
+            <span class="chip ${store.inventory.oos === "是" ? "warn" : "good"}">${store.inventory.oos === "是" ? "存在缺货" : "库存正常"}</span>
+          </div>
+        </div>`;
+      }).join("");
+
+      if (!filtered.length) {
+        storeList.innerHTML = `<div class="section"><h3>没有匹配结果</h3><div style="font-size:13px;color:var(--muted);">请调整筛选条件或搜索词。</div></div>`;
+        detailView.innerHTML = "";
+        return;
+      }
+
+      Array.from(document.querySelectorAll(".store-item")).forEach(node => {
+        node.addEventListener("click", () => {
+          selectedStoreId = node.dataset.id;
+          renderList();
+          renderDetail();
+        });
+      });
+    }
+
+    /* =========================================================
+       雷达图（内联 SVG，五维）
+    ========================================================= */
+    function radarSVG(storeId) {
+      const sc = scores[storeId];
+      const dimVals = DIMS.map(d => sc[d.code]);
+      const R = 88, CX = 100, CY = 100, N = DIMS.length;
+      const ang = (i) => -Math.PI / 2 + i * (2 * Math.PI / N);
+      const pt = (i, r) => [CX + r * Math.cos(ang(i)), CY + r * Math.sin(ang(i))];
+
+      // 背景网格(5档) + 骨架线
+      let grid = "";
+      for (let g = 1; g <= 5; g++) {
+        const rr = R * g / 5;
+        const poly = DIMS.map((_, i) => pt(i, rr).join(",")).join(" ");
+        grid += `<polygon points="${poly}" fill="none" stroke="rgba(120,105,87,0.16)" stroke-width="1"/>`;
+      }
+      let spokes = "";
+      DIMS.forEach((_, i) => {
+        const [ax, ay] = pt(i, R);
+        spokes += `<line x1="${CX}" y1="${CY}" x2="${ax}" y2="${ay}" stroke="rgba(120,105,87,0.16)" stroke-width="1"/>`;
+        const [lx, ly] = pt(i, R + 16);
+        DIMS[i].labelPos = [lx, ly];
+      });
+
+      // 数据多边形
+      const dataPoly = DIMS.map((d, i) => pt(i, dimVals[i] / 100 * R).join(",")).join(" ");
+
+      // 顶点坐标(用于标签锚点)
+      const labels = DIMS.map((d) => {
+        const [lx, ly] = pt(DIMS.indexOf(d), R + 17);
+        let anchor = "middle";
+        if (lx < CX - 8) anchor = "end";
+        else if (lx > CX + 8) anchor = "start";
+        let dy = 0;
+        if (ly < CY - 8) dy = -4;
+        else if (ly > CY + 8) dy = 12;
+        else dy = 4;
+        return { x: lx, y: ly, anchor, dy, d };
+      });
+
+      return `
+      <svg width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="${storeId} 五维雷达图">
+        ${grid}
+        ${spokes}
+        <polygon points="${dataPoly}" fill="rgba(161,79,42,0.18)" stroke="#a14f2a" stroke-width="2"/>
+        ${DIMS.map((d, i) => { const [px, py] = pt(i, dimVals[i] / 100 * R); return `<circle cx="${px}" cy="${py}" r="3" fill="#a14f2a"/>`; }).join("")}
+        ${labels.map(l => `<text x="${l.x}" y="${l.y}" text-anchor="${l.anchor}" dy="${l.dy}" font-size="10" fill="#786957">${l.d.label}</text>`).join("")}
+        ${labels.map(l => `<text x="${l.x}" y="${l.y}" text-anchor="${l.anchor}" dy="${l.dy + 11}" font-size="9" fill="#a14f2a" font-weight="700">${scores[storeId][l.d.code].toFixed(1)}</text>`).join("")}
+      </svg>`;
+    }
+
+    /* 维度条形 + 图例 */
+    function dimensionBars(storeId) {
+      const sc = scores[storeId];
+      return DIMS.map(d => `
+        <div class="dim-row">
+          <div class="nm" style="color:${d.color};">${d.label}</div>
+          <div class="bar"><i style="width:${sc[d.code]}%;background:linear-gradient(90deg,${d.color},${d.color}cc);"></i></div>
+          <div class="vl">${sc[d.code].toFixed(1)}</div>
+        </div>
+      `).join("");
+    }
+
+    function radarLegends() {
+      return DIMS.map(d => `<span class="radar-legend"><span class="dot" style="background:${d.color};"></span>${d.label}</span>`).join("");
+    }
+
+    /* Top3 驱动 */
+    function driversHTML(storeId) {
+      const d = scores[storeId].drivers;
+      return d.map(x => {
+        const code = x[0], label = x[1];
+        if (code === "risk") return `<span class="driver-chip" style="background:rgba(180,75,56,0.10);border-color:rgba(180,75,56,0.28);"><b style="color:#b44b38;">风险</b> · ${label}</span>`;
+        const dim = DIMS.find(v => v.code === code);
+        return `<span class="driver-chip"><b style="color:${dim.color};">${dim.label}</b> · ${label}</span>`;
+      }).join("");
+    }
+
+    /* 风险扣分面板 */
+    function riskPanelHTML(storeId) {
+      const sc = scores[storeId];
+      if (!sc.risk || sc.risk === 0) return "";
+      const items = sc.riskItems.map(code => `<div class="risk-item">· ${RISK_LABEL[code] || code}</div>`).join("");
+      return `
+      <div class="section risk-panel">
+        <h3>风险扣分 <span style="font-size:12px;color:var(--muted);font-weight:400;">risk_deduction</span></h3>
+        ${items}
+        <div class="risk-item" style="margin-top:6px;">合计扣 <span class="amt">-${sc.risk}</span> 分：final = ${sc.calibrated} − ${sc.risk} = <span class="amt">${sc.final}</span></div>
+      </div>`;
+    }
+
+    /* 三级 explain 渲染 */
+    function renderEvidence(storeId) {
+      const sc = scores[storeId];
+      const store = stores.find(s => s.id === storeId);
+      if (sc.explainNote === "full") {
+        const ex = explainFull[storeId];
+        const chainHtml = ex.evidence.map(dim => `
+          <div class="explain">
+            <div class="level">[维度] ${dim.name} <span class="sc">${dim.score}</span></div>
+            <ul>
+              ${dim.sub.map(ind => `
+                <li class="ind">[指标] <b>${ind.name}</b> <span class="sc">${ind.score}</span>
+                  <div class="ev">证据字段：${Object.entries(ind.ev).map(([k, v]) => `<span class="kv"><code>${k}=${typeof v === "object" ? JSON.stringify(v) : v}</code></span>`).join(" ")}</div>
+                </li>`).join("")}
+            </ul>
+          </div>`).join("");
+        return `
+          <div class="section" style="background:rgba(255,255,255,0.66);">
+            <h3>分数拆解 explain <span style="font-size:12px;color:var(--muted);font-weight:400;">07 §7 三级证据链 · 维度→指标→证据字段</span></h3>
+            <div class="metrics" style="grid-template-columns:repeat(4,1fr);">
+              <div class="metric"><div class="k">raw_score</div><div class="v">${ex.raw_score}</div></div>
+              <div class="metric"><div class="k">calibrated</div><div class="v">${ex.calibrated_score}</div></div>
+              <div class="metric"><div class="k">risk_deduction</div><div class="v">${ex.risk_deduction}</div></div>
+              <div class="metric"><div class="k">confidence</div><div class="v">${ex.confidence}</div></div>
+            </div>
+            ${chainHtml}
+            <div style="margin-top:10px;font-size:12px;color:var(--muted);">top_drivers：${ex.evidence.map(d=>`${d.code}(${d.score})`).join("、")} 与 top_drivers 一致。</div>
+          </div>`;
+      } else {
+        const ex = explainSimple[storeId];
+        const chainHtml = ex.evidence.map(e => `
+          <div class="explain">
+            <div class="level">[维度] ${e[1]} <span class="sc">${e[2]}</span></div>
+            <div class="ev" style="padding-left:14px;">证据/说明：${e[3]}</div>
+          </div>`).join("");
+        return `
+          <div class="section" style="background:rgba(255,255,255,0.66);">
+            <h3>分数拆解 explain <span style="font-size:12px;color:var(--muted);font-weight:400;">维度级简化拆解</span></h3>
+            <div class="metrics" style="grid-template-columns:repeat(4,1fr);">
+              <div class="metric"><div class="k">raw_score</div><div class="v">${sc.raw}</div></div>
+              <div class="metric"><div class="k">calibrated</div><div class="v">${sc.calibrated}</div></div>
+              <div class="metric"><div class="k">risk_deduction</div><div class="v">${sc.risk}</div></div>
+              <div class="metric"><div class="k">confidence</div><div class="v">—</div></div>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">${ex.note}</div>
+            ${chainHtml}
+          </div>`;
+      }
+    }
+
+    /* 潜力分可视化卡片（v2 核心新增） */
+    function scoreVizHTML(storeId) {
+      const sc = scores[storeId];
+      return `
+      <div class="score-hero">
+        <div class="score-big">
+          <div class="num">${sc.final}</div>
+          <div class="cap">final_score 潜力分</div>
+          <div class="score-lev ${levelClass(sc.level)}" style="margin-top:6px;font-size:13px;">${sc.level}</div>
+        </div>
+        <div class="score-meta">
+          <div class="row"><span class="k">最终潜力分 final_score</span><span class="v">${sc.final}</span></div>
+          <div class="row"><span class="k">分层 score_level</span><span class="v" style="color:${levelColor(sc.level)};">${sc.level}</span></div>
+          <div class="row"><span class="k">分位 score_rank_pct</span><span class="v">${sc.rank}（前 ${Math.round((1-sc.rank)*100)}%）</span></div>
+          <div class="row"><span class="k">风险扣分 risk_deduction</span><span class="v">${sc.risk > 0 ? `<span class="delta">-${sc.risk}</span>` : "0"}</span></div>
+          <div class="row"><span class="k">合成分 raw_score</span><span class="v">${sc.raw}</span></div>
+          <div class="row"><span class="k">校准分 calibrated_score</span><span class="v">${sc.calibrated}</span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>潜力分五维雷达图 <span style="font-size:12px;color:var(--muted);font-weight:400;">weighted → calibrated − risk = final</span></h3>
+        <div class="radar-wrap">
+          <div class="radar-box">
+            ${radarSVG(storeId)}
+            <div class="radar-legends">${radarLegends()}</div>
+          </div>
+          <div class="dim-chips">${dimensionBars(storeId)}</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Top3 驱动维度 <span style="font-size:12px;color:var(--muted);font-weight:400;">07 §6.1 · 驱动画像禁止只报总分</span></h3>
+        <div class="drivers">${driversHTML(storeId)}</div>
+      </div>
+
+      ${riskPanelHTML(storeId)}
+      `;
+    }
+
+    function renderDetail() {
+      const store = stores.find(s => s.id === selectedStoreId);
+      if (!store) return;
+
+      const riskChips = store.riskFlags.map(r => `<span class="chip warn">${r}</span>`).join("");
+      const oppChips = store.opportunityCategories.map(r => `<span class="chip good">${r}</span>`).join("");
+      const tenantOppChips = store.tenantView.opportunityTags.map(r => `<span class="chip good">${r}</span>`).join("");
+      const tenantRiskChips = store.tenantView.riskTags.map(r => `<span class="chip warn">${r}</span>`).join("");
+      const sc = scores[store.id];
+      const promptText = promptTemplate.replace("{{store_json}}", JSON.stringify(
+        { ...store, final_score: sc.final, score_level: sc.level, score_rank_pct: sc.rank, dimension_scores: { base: sc.base, asset: sc.asset, performance: sc.performance, opportunity: sc.opportunity, reachability: sc.reachability }, top_drivers: sc.drivers }, null, 2));
+
+      detailView.innerHTML = `
+        <div class="detail-grid">
+          <div>
+            ${scoreVizHTML(store.id)}
+
+            <div class="section insight">
+              <div class="panel-title" style="margin-bottom:8px;">
+                <h2 style="font-size:24px;margin:0;">${store.name}</h2>
+                <span>${store.id}</span>
+              </div>
+              <div class="meta" style="margin-bottom:12px;">
+                <span class="chip">${store.city} · ${store.cityTier}</span>
+                <span class="chip">${store.formatType}</span>
+                <span class="chip">${store.businessCircle}</span>
+                <span class="chip">${store.area}㎡</span>
+                <span class="chip">开店${store.openYears}年</span>
+                <span class="chip">${store.tenantEnterpriseName}</span>
+                <span class="chip">${store.tenantView.penetrationStatus}</span>
+                <span class="chip strong">潜力分 ${sc.final} · ${sc.level}</span>
+              </div>
+              <h3>AI一句话画像</h3>
+              <div style="font-size:16px;line-height:1.8;margin-bottom:10px;">${store.insights.oneLiner}</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.8;">${store.persona}</div>
+            </div>
+
+            <div class="section">
+              <h3>企业视角概览</h3>
+              <div class="metrics">
+                <div class="metric"><div class="k">企业近90天订单额</div><div class="v">${formatCurrency(store.tenantView.orderAmount90d)}</div></div>
+                <div class="metric"><div class="k">企业订单数</div><div class="v">${store.tenantView.orderCount90d}</div></div>
+                <div class="metric"><div class="k">企业活跃下单天数</div><div class="v">${store.tenantView.activeDays90d}</div></div>
+                <div class="metric"><div class="k">企业渗透状态</div><div class="v" style="font-size:16px;">${store.tenantView.penetrationStatus}</div></div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>核心经营指标</h3>
+              <div class="metrics">
+                <div class="metric"><div class="k">近90天GMV</div><div class="v">${formatCurrency(store.trading.amount90d)}</div></div>
+                <div class="metric"><div class="k">订单数</div><div class="v">${store.trading.orderCount90d}</div></div>
+                <div class="metric"><div class="k">单笔均额</div><div class="v">${formatCurrency(store.trading.avgOrder90d)}</div></div>
+                <div class="metric"><div class="k">活跃下单天数</div><div class="v">${store.trading.activeDays90d}</div></div>
+                <div class="metric"><div class="k">在售SKU数</div><div class="v">${store.inventory.onSaleSku}</div></div>
+                <div class="metric"><div class="k">排面数</div><div class="v">${store.inventory.facingCount}</div></div>
+                <div class="metric"><div class="k">竞品SKU数</div><div class="v">${store.competitor.skuCount}</div></div>
+                <div class="metric"><div class="k">拜访后转化率</div><div class="v">${formatPercent(store.visits.orderAfterVisitRatio90d)}</div></div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>AI洞察</h3>
+              <div class="two-col">
+                <div>
+                  <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">事实依据</div>
+                  <ul>${store.insights.facts.map(item => `<li>${item}</li>`).join("")}</ul>
+                </div>
+                <div>
+                  <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">经营判断</div>
+                  <ul>${store.insights.judgments.map(item => `<li>${item}</li>`).join("")}</ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>推荐动作</h3>
+              <ul>${store.insights.actions.map(item => `<li>${item}</li>`).join("")}</ul>
+            </div>
+
+            <div class="section">
+              <h3>近90天经营信号</h3>
+              <div class="timeline">
+                ${store.signals90d.map(item => `<div class="signal"><div class="t">经营信号</div><div class="d">${item}</div></div>`).join("")}
+              </div>
+            </div>
+
+            ${renderEvidence(store.id)}
+          </div>
+
+          <div>
+            <div class="section">
+              <h3>企业机会标签</h3>
+              <div class="tags">${tenantOppChips}</div>
+            </div>
+
+            <div class="section">
+              <h3>机会品类</h3>
+              <div class="tags">${oppChips}</div>
+            </div>
+
+            <div class="section">
+              <h3>竞品情况</h3>
+              <ul>
+                <li>竞品品牌：${store.competitor.brands.join(" / ")}</li>
+                <li>竞品SKU数：${store.competitor.skuCount}</li>
+                <li>价格带：${store.competitor.priceBand}</li>
+                <li>排面：${store.competitor.facingCount}</li>
+                <li>陈列位置：${store.competitor.displayPosition}</li>
+                <li>促销状态：${store.competitor.promoStatus}</li>
+              </ul>
+            </div>
+
+            <div class="section">
+              <h3>库存与资产</h3>
+              <ul>
+                <li>在售SKU数：${store.inventory.onSaleSku}，排面数：${store.inventory.facingCount}</li>
+                <li>库存量：${store.inventory.units}，库存金额：${formatCurrency(store.inventory.amount)}</li>
+                <li>缺货标记：${store.inventory.oos}，最近补货时间：${store.inventory.lastRestock}</li>
+                <li>POS：${store.assets.pos}，冷藏柜：${store.assets.cooler}，冷冻柜：${store.assets.freezer}</li>
+                <li>货架组：${store.assets.shelfGroup}，堆头：${store.assets.stack}，数字化订货：${store.assets.digital}</li>
+              </ul>
+            </div>
+
+            <div class="section">
+              <h3>拜访与协议</h3>
+              <ul>
+                <li>近90天拜访次数：${store.visits.count90d}</li>
+                <li>平均停留时长：${store.visits.avgStay90d}分钟</li>
+                <li>拜访后下单转化率：${formatPercent(store.visits.orderAfterVisitRatio90d)}</li>
+                <li>生效中活动协议：${store.agreements.count}个，费用${formatCurrency(store.agreements.fee)}</li>
+                <li>该企业最近下单：${store.tenantView.lastOrderDate}</li>
+              </ul>
+            </div>
+
+            <div class="section">
+              <h3>企业风险标签</h3>
+              <div class="tags">${tenantRiskChips}</div>
+            </div>
+
+            <div class="section">
+              <h3>门店风险状态</h3>
+              <div class="tags">${riskChips}</div>
+            </div>
+
+            <div class="section">
+              <h3>门店全局标签</h3>
+              <div class="tags">${store.storeGlobalTags.map(tag => `<span class="chip">${tag}</span>`).join("")}</div>
+            </div>
+
+            <div class="section">
+              <h3>企业视角标签</h3>
+              <div class="tags">${store.tenantCoreTags.map(tag => `<span class="chip strong">${tag}</span>`).join("")}</div>
+            </div>
+
+            <div class="section">
+              <h3>AI提示词模板</h3>
+              <div class="prompt-box">${promptText}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function bindEvents() {
+      [searchInput, tierFilter, formatFilter, scoreFilter].forEach(node => {
+        node.addEventListener("input", () => { renderList(); renderDetail(); });
+        node.addEventListener("change", () => { renderList(); renderDetail(); });
+      });
+    }
+
+    initFilters();
+    renderSummary();
+    bindEvents();
+    renderList();
+    renderDetail();
+  </script>
+</body>
+</html>
